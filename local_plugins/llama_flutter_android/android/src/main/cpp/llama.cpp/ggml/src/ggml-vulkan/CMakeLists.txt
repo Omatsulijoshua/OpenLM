@@ -36,6 +36,12 @@ endfunction()
 #  TEST_SHADER_FILE - Path to the test shader file
 #  RESULT_VARIABLE - Name of the variable to set (ON/OFF) based on test result
 function(test_shader_extension_support EXTENSION_NAME TEST_SHADER_FILE RESULT_VARIABLE)
+    if (ANDROID AND EXTENSION_NAME MATCHES "cooperative_matrix")
+        message(STATUS "${EXTENSION_NAME} skipped on Android (requires vulkan1.3)")
+        set(${RESULT_VARIABLE} OFF PARENT_SCOPE)
+        return()
+    endif()
+
     execute_process(
         COMMAND ${Vulkan_GLSLC_EXECUTABLE} -o - -fshader-stage=compute --target-env=vulkan1.3 "${TEST_SHADER_FILE}"
         OUTPUT_VARIABLE glslc_output
