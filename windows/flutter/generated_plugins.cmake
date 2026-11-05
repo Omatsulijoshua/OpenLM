@@ -5,7 +5,6 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_windows
   firebase_core
-  flutter_inappwebview_windows
   gal
   llama_flutter_android
   permission_handler_windows
