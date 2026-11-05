@@ -142,20 +142,42 @@ flutter pub get
 
 ### Desktop Builds
 
+#### Windows
 ```bash
-# Windows
 flutter build windows --release
+```
+The output executable is generated at `build/windows/x64/runner/Release/openlm.exe`.
 
-# macOS
-flutter build macos --release
-
-# Linux
+#### Linux
+```bash
 flutter build linux --release
 ```
+The output bundle is generated at `build/linux/x64/release/bundle/`.
+
+#### macOS (via Xcode or CLI)
+You can build the macOS app directly using Flutter or open the project in Xcode:
+
+**Method 1 — Terminal / CLI:**
+```bash
+flutter pub get
+cd macos && pod install && cd ..
+flutter build macos --release
+```
+Your standalone macOS app bundle will be ready at:  
+`build/macos/Build/Products/Release/OpenLM.app`. You can double-click it or drag it to your `/Applications` folder.
+
+**Method 2 — Xcode GUI:**
+```bash
+open macos/Runner.xcworkspace
+```
+1. In Xcode's top toolbar, set the run destination to **My Mac**.
+2. Select **Product > Build** (`Cmd + B`) to build, or **Product > Run** (`Cmd + R`) to launch with debugging.
+
+---
 
 ### Mobile Builds
 
-#### Android
+#### Android (APKs)
 ```bash
 # Debug APK
 flutter build apk --debug
@@ -163,15 +185,51 @@ flutter build apk --debug
 # Production Split-ABI APKs
 flutter build apk --release --split-per-abi
 ```
+The output APKs are located at `build/app/outputs/flutter-apk/`.
 
-#### iOS / iPadOS
+#### iOS / iPadOS (via Xcode or Sideloading)
+
+To install OpenLM on your iPhone or iPad, you need a Mac with **Xcode** (available free from the Mac App Store) and CocoaPods (`brew install cocoapods`).
+
+##### Method 1 — Direct USB Install to iPhone/iPad using Xcode (Free Apple ID)
+You can install and run OpenLM on your personal devices without a paid Apple Developer Account:
+
+1. **Install dependencies:**
+   ```bash
+   flutter pub get
+   cd ios && pod install && cd ..
+   ```
+2. **Open the iOS workspace in Xcode:**
+   ```bash
+   open ios/Runner.xcworkspace
+   ```
+   *(Always open `.xcworkspace`, never `.xcodeproj`)*
+3. **Configure Signing:**
+   - In Xcode's left sidebar, click on the blue **Runner** project icon at the very top.
+   - Select the **Runner** target, then click the **Signing & Capabilities** tab.
+   - Check **"Automatically manage signing"**.
+   - Under **Team**, select your name / personal Apple ID (e.g., `Your Name (Personal Team)`). If you haven't logged in, go to `Xcode > Settings > Accounts` and add your Apple ID with `+`.
+   - Change the **Bundle Identifier** to a unique string for your account, for example: `com.yourname.openlm`.
+4. **Connect Device & Run:**
+   - Plug your iPhone or iPad into your Mac via USB cable (tap "Trust this computer" on your device if prompted).
+   - In Xcode's top destination dropdown, select your connected iPhone or iPad.
+   - Click the **Run** button (play icon or `Cmd + R`). Xcode will compile the Metal engine, link the frameworks, and install OpenLM onto your device.
+5. **Trust the Developer Profile on your Device:**
+   - On your iPhone/iPad, go to **Settings > General > VPN & Device Management**.
+   - Tap your Apple ID under *Developer App* and tap **Trust**.
+   - On iOS 16+, make sure **Developer Mode** is turned on in **Settings > Privacy & Security > Developer Mode** (requires a device restart).
+
+##### Method 2 — Build Unsigned `.ipa` for AltStore / SideStore
+If you prefer installing via AltStore, SideStore, or TrollStore:
 ```bash
-cd ios
-pod install
-cd ..
 flutter build ios --release --no-codesign
+cd build/ios/iphoneos
+mkdir -p Payload
+cp -r Runner.app Payload/
+zip -r ../../../OpenLM-iOS.ipa Payload
+cd ../../..
 ```
-*For sideloading on iOS without an Apple Developer account, you can install the generated package via **AltStore** or **SideStore** with Developer Mode enabled.*
+Transfer the generated `OpenLM-iOS.ipa` to your device and open it in AltStore / SideStore to install.
 
 ---
 
