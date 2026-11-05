@@ -1,0 +1,221 @@
+name: Release OpenLM
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  # ── Windows Build ────────────────────────────────────────────────────────
+  build-windows:
+    name: Build Windows (x64)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Windows Release
+        run: flutter build windows --release
+
+      - name: Package Windows Binary
+        shell: pwsh
+        run: |
+          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath OpenLM-Windows-x64.zip
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenLM-Windows-x64
+          path: OpenLM-Windows-x64.zip
+
+  # ── Linux Build ──────────────────────────────────────────────────────────
+  build-linux:
+    name: Build Linux (x64)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Linux Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Linux Release
+        run: flutter build linux --release
+
+      - name: Package Linux Binary
+        run: |
+          cd build/linux/x64/release/bundle
+          tar -czvf ../../../../OpenLM-Linux-x64.tar.gz *
+          cd ../../../..
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenLM-Linux-x64
+          path: OpenLM-Linux-x64.tar.gz
+
+  # ── Android APKs ─────────────────────────────────────────────────────────
+  build-android:
+    name: Build Android APKs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Split-per-ABI APKs
+        env:
+          PRIVATELM_ALLOW_DEBUG_RELEASE_SIGNING: "true"
+        run: flutter build apk --release --split-per-abi
+
+      - name: Collect APKs
+        run: |
+          mkdir -p dist-apks
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk dist-apks/OpenLM-Android-arm64-v8a.apk 2>/dev/null || true
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk dist-apks/OpenLM-Android-armeabi-v7a.apk 2>/dev/null || true
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk dist-apks/OpenLM-Android-x86_64.apk 2>/dev/null || true
+
+      - name: Upload Android APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenLM-Android-APKs
+          path: dist-apks/*.apk
+
+  # ── macOS & iOS Builds ───────────────────────────────────────────────────
+  build-apple:
+    name: Build macOS & iOS
+    runs-on: macos-14
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Prebuild llama.cpp for macOS
+        run: |
+          chmod +x local_plugins/llama_flutter_android/scripts/*.sh
+          bash local_plugins/llama_flutter_android/scripts/build_llama_macos.sh || true
+
+      - name: Build macOS Release
+        run: flutter build macos --release
+
+      - name: Package macOS App
+        run: |
+          cd build/macos/Build/Products/Release
+          zip -r ../../../../../OpenLM-macOS.zip OpenLM.app
+          cd ../../../../..
+
+      - name: Prebuild llama.cpp for iOS
+        run: |
+          bash local_plugins/llama_flutter_android/scripts/build_llama_ios.sh || true
+
+      - name: Build iOS (Unsigned IPA for AltStore/SideStore)
+        run: |
+          flutter build ios --release --no-codesign
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r ../../../OpenLM-iOS.ipa Payload
+          zip -r ../../../OpenLM-iOS.zip Runner.app
+          cd ../../..
+
+      - name: Upload Apple Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenLM-Apple-Release
+          path: |
+            OpenLM-macOS.zip
+            OpenLM-iOS.ipa
+            OpenLM-iOS.zip
+
+  # ── Publish GitHub Release ───────────────────────────────────────────────
+  publish-release:
+    name: Publish Release Assets
+    needs: [build-windows, build-linux, build-android, build-apple]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Compute Tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "RELEASE_TAG=${{ github.event.inputs.tag_name }}" >> $GITHUB_ENV
+          else
+            echo "RELEASE_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          fi
+
+      - name: Create GitHub Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: "OpenLM ${{ env.RELEASE_TAG }}"
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
