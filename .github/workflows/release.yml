@@ -77,9 +77,7 @@ jobs:
 
       - name: Package Linux Binary
         run: |
-          cd build/linux/x64/release/bundle
-          tar -czvf ../../../../OpenLM-Linux-x64.tar.gz *
-          cd ../../../..
+          tar -czvf OpenLM-Linux-x64.tar.gz -C build/linux/x64/release/bundle .
 
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
@@ -159,9 +157,7 @@ jobs:
 
       - name: Package macOS App
         run: |
-          cd build/macos/Build/Products/Release
-          zip -r ../../../../../OpenLM-macOS.zip OpenLM.app
-          cd ../../../../..
+          zip -r OpenLM-macOS.zip build/macos/Build/Products/Release/OpenLM.app
 
       - name: Prebuild llama.cpp for iOS
         run: |
@@ -170,12 +166,10 @@ jobs:
       - name: Build iOS (Unsigned IPA for AltStore/SideStore)
         run: |
           flutter build ios --release --no-codesign
-          cd build/ios/iphoneos
           mkdir -p Payload
-          cp -r Runner.app Payload/
-          zip -r ../../../OpenLM-iOS.ipa Payload
-          zip -r ../../../OpenLM-iOS.zip Runner.app
-          cd ../../..
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r OpenLM-iOS.ipa Payload
+          zip -r OpenLM-iOS.zip build/ios/iphoneos/Runner.app
 
       - name: Upload Apple Artifacts
         uses: actions/upload-artifact@v4
@@ -189,6 +183,7 @@ jobs:
   # ── Publish GitHub Release ───────────────────────────────────────────────
   publish-release:
     name: Publish Release Assets
+    if: always() && !cancelled()
     needs: [build-windows, build-linux, build-android, build-apple]
     runs-on: ubuntu-latest
     steps:

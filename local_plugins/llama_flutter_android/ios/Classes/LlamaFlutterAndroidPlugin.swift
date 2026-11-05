@@ -107,8 +107,9 @@ public class LlamaFlutterAndroidPlugin: NSObject, FlutterPlugin, LlamaHostApi {
     func generateChat(request: ChatRequest, completion: @escaping (Result<Void, Error>) -> Void) {
         inferenceQueue.async { [weak self] in
             guard let self = self else { return }
+            let templateMessages = request.messages.map { TemplateChatMessage(role: $0.role, content: $0.content) }
             let formattedPrompt = ChatTemplateManager.shared.formatMessages(
-                request.messages,
+                messages: templateMessages,
                 templateName: request.template,
                 modelPath: nil
             )
