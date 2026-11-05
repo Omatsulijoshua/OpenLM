@@ -36,6 +36,10 @@ if(ANDROID_ABI STREQUAL "arm64-v8a")
     set(GGML_VULKAN ${LLAMA_ANDROID_VULKAN} CACHE BOOL "Enable Vulkan GPU backend" FORCE)
     set(GGML_RPC ${LLAMA_ANDROID_RPC} CACHE BOOL "Enable RPC backend" FORCE)
     set(GGML_RPC_RDMA OFF CACHE BOOL "No RDMA on Android" FORCE)
+    set(GGML_VULKAN_COOPMAT_GLSLC_SUPPORT OFF CACHE BOOL "Disable coopmat for Android glslc" FORCE)
+    set(GGML_VULKAN_COOPMAT2_GLSLC_SUPPORT OFF CACHE BOOL "Disable coopmat2 for Android glslc" FORCE)
+    set(GGML_VULKAN_COOPMAT2_DECODE_VECTOR_GLSLC_SUPPORT OFF CACHE BOOL "Disable coopmat2 vector for Android glslc" FORCE)
+    set(LLAMA_BUILD_APP OFF CACHE BOOL "" FORCE)
 else()
     # 32-bit Arm (armeabi-v7a): plain CPU build. llamafile's sgemm uses
     # FP16 NEON intrinsics that ARMv7 lacks. No cluster support either.
