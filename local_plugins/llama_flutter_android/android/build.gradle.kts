@@ -75,12 +75,14 @@ android {
                     "-DANDROID_STL=c++_shared",
                     "-DANDROID_ARM_NEON=ON",
                     "-DGGML_CPU_AARCH64=ON",
-                    // The Vulkan shader generator's host toolchain cannot
-                    // target Android from Windows; keep Android builds
-                    // portable across Windows and Linux hosts.
-                    "-DLLAMA_ANDROID_VULKAN=OFF",
                     "-DGGML_OPENMP=OFF"
                 )
+                // The Windows NDK host cannot build Vulkan's separate
+                // shader-generator executable. Linux/macOS Android builds
+                // retain Vulkan support.
+                if (System.getProperty("os.name").startsWith("Windows", ignoreCase = true)) {
+                    arguments += "-DLLAMA_ANDROID_VULKAN=OFF"
+                }
             }
         }
     }
