@@ -48,7 +48,7 @@ android {
 
         ndk {
             def flutterTargets = project.findProperty('target-platform')?.toString()?.split(',') ?: []
-            def arm64Only = !flutterTargets.isEmpty() && flutterTargets.every { it == 'android-arm64' }
+            def arm64Only = flutterTargets.length > 0 && flutterTargets.every { it == 'android-arm64' }
             abiFilters arm64Only ? ['arm64-v8a'] : ['arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64']
         }
 
