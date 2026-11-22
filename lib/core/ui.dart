@@ -54,7 +54,7 @@ class AppTokens {
       text: d ? Colors.white : const Color(0xFF0B0B0C),
       muted: d ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
       faint: d ? const Color(0xFF5A5A5F) : const Color(0xFFAEAEB2),
-      accent: d ? const Color(0xFF0A84FF) : const Color(0xFF007AFF),
+      accent: d ? const Color(0xFF0B8278) : const Color(0xFF0F766E),
       surface: d ? const Color(0xFF141416) : const Color(0xFFF5F5F7),
       surfacePressed: d ? const Color(0xFF1E1E21) : const Color(0xFFEBEBED),
       fill: d

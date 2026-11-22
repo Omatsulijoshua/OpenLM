@@ -1,5 +1,7 @@
 # OpenLM
 
+**An independent OpenLM fork by Omatsuli Joshua Toritseju**
+
 [![Cross-Platform Flutter](https://img.shields.io/badge/Flutter-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20iOS%20%7C%20Android-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Local LLM Inference](https://img.shields.io/badge/Inference-Local%20GGUF%20%2B%20ggml--rpc%20Cluster-00C853?style=for-the-badge)](https://github.com/ggerganov/llama.cpp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](./LICENSE)
@@ -133,7 +135,7 @@ When loading a large model that exceeds the VRAM or RAM of a single computer or 
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/openlm.git
+git clone https://github.com/Omatsulijoshua/OpenLM.git
 cd openlm
 
 # Fetch dependencies

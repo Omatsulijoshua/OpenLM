@@ -10,6 +10,8 @@ import '../services/cluster_service.dart';
 import '../services/inference_service.dart';
 import '../services/local_image_service.dart';
 import '../core/haptics.dart';
+import '../core/brand.dart';
+import 'brand_mark.dart';
 
 /// Landing screen shown in the Chat tab before the first message is sent.
 ///
@@ -97,7 +99,7 @@ class _HomeTokens {
       text: isDark ? Colors.white : const Color(0xFF0B0B0C),
       muted: isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73),
       faint: isDark ? const Color(0xFF5A5A5F) : const Color(0xFFAEAEB2),
-      accent: isDark ? const Color(0xFF0A84FF) : const Color(0xFF007AFF),
+      accent: isDark ? const Color(0xFF0B8278) : const Color(0xFF0F766E),
       card: isDark ? const Color(0xFF141416) : const Color(0xFFF5F5F7),
       cardPressed: isDark ? const Color(0xFF1E1E21) : const Color(0xFFEBEBED),
       hairline: isDark
@@ -188,11 +190,11 @@ class _Greeting extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(children: [
       if (!compact) ...[
-        Image.asset('assets/icons/appicon.png', width: 44, height: 44),
+        const BrandMark(size: 68),
         const SizedBox(height: 18),
       ],
       Text(
-        "$_salutation\nwhat's on your mind?",
+        "$_salutation\nlet's make something.",
         textAlign: TextAlign.center,
         style: GoogleFonts.inter(
           fontSize: compact ? 24 : 28,
@@ -202,6 +204,12 @@ class _Greeting extends StatelessWidget {
           color: t.text.withValues(alpha: 0.88),
         ),
       ),
+      if (!compact) ...[
+        const SizedBox(height: 12),
+        Text(AppBrand.tagline,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(fontSize: 13, color: t.muted)),
+      ],
     ]);
   }
 }
@@ -464,12 +472,12 @@ class _Starter {
 }
 
 const _textStarters = [
-  _Starter(Icons.lightbulb_outline_rounded, 'Explain quantum computing simply',
+  _Starter(Icons.lightbulb_outline_rounded, 'Make a tricky idea click',
       'Explain quantum computing simply, like I\'m new to it.'),
-  _Starter(Icons.mail_outline_rounded, 'Write a polite follow-up email',
+  _Starter(Icons.mail_outline_rounded, 'Find the right words',
       'Write a short, polite follow-up email to someone who hasn\'t replied in a week.'),
-  _Starter(Icons.flight_takeoff_rounded, 'Plan a 3-day trip to Tokyo',
-      'Plan a relaxed 3-day trip to Tokyo with food and sightseeing.'),
+  _Starter(Icons.flight_takeoff_rounded, 'Turn an idea into a plan',
+      'Help me turn my idea into a practical plan. Start by asking what I want to achieve.'),
 ];
 
 const _imageStarters = [

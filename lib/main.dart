@@ -13,6 +13,7 @@ import 'controllers/cloud_model_controller.dart';
 import 'controllers/server_controller.dart';
 import 'controllers/model_controller.dart';
 import 'core/theme.dart';
+import 'core/brand.dart';
 //////
 import 'core/routes.dart';
 import 'services/hive_service.dart';
@@ -230,7 +231,7 @@ class OpenLMApp extends StatelessWidget {
       final themeMode = settings.themeMode.value;
       final scale = settings.fontScale.value; // read here → Obx tracks it
       return GetMaterialApp(
-        title: 'OpenLM',
+        title: AppBrand.name,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,

@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../controllers/settings_controller.dart';
 import '../core/constants.dart';
 import '../core/ui.dart';
+import '../core/brand.dart';
+import '../widgets/brand_mark.dart';
 import '../widgets/home_empty_state.dart' show providerLabel;
 import '../services/inference_service.dart';
 import '../services/hive_service.dart';
@@ -145,17 +147,18 @@ class SettingsView extends GetView<SettingsController> {
                 onTap: () => Get.to(() => const LogView()),
               ),
               AppRow(
-                leading: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.asset('assets/icons/appicon.png',
-                      width: 32, height: 32),
-                ),
-                title: 'OpenLM',
+                leading: const BrandMark(size: 32),
+                title: AppBrand.name,
                 subtitle: controller.appVersion.value.isEmpty
-                    ? 'Cross-Platform LLM Client'
-                    : 'Version ${controller.appVersion.value}',
+                    ? 'Maintained by ${AppBrand.author}'
+                    : 'By ${AppBrand.author} · Version ${controller.appVersion.value}',
               ),
             ]),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              child: Text('Based on OpenLM · MIT licensed',
+                  textAlign: TextAlign.center, style: t.caption),
+            ),
           ],
         );
       }),

@@ -146,7 +146,7 @@ class _ChatDrawerState extends State<ChatDrawer> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final text = isDark ? Colors.white : const Color(0xFF0B0B0C);
     final muted = isDark ? const Color(0xFF8E8E93) : const Color(0xFF6E6E73);
-    final accent = isDark ? const Color(0xFF0A84FF) : const Color(0xFF007AFF);
+    final accent = isDark ? const Color(0xFF0B8278) : const Color(0xFF0F766E);
     final bg = isDark ? const Color(0xFF0E0E10) : const Color(0xFFF7F7F8);
     final field = isDark
         ? Colors.white.withValues(alpha: 0.07)

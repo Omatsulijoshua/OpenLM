@@ -20,13 +20,14 @@ import '../widgets/chat_bubble.dart';
 import '../widgets/chat_drawer.dart';
 import '../widgets/home_empty_state.dart';
 import '../core/ui.dart';
+import '../core/brand.dart';
 import '../widgets/thought_disclosure.dart';
 import '../core/haptics.dart';
 
 // ── Apple-style color helpers ──
 Color _appleBlue(BuildContext c) => Theme.of(c).brightness == Brightness.dark
-    ? const Color(0xFF0A84FF)
-    : const Color(0xFF007AFF);
+    ? const Color(0xFF0B8278)
+    : const Color(0xFF0F766E);
 
 Color _aiBubble(BuildContext c) => Theme.of(c).brightness == Brightness.dark
     ? const Color(0xFF1C1C1E)
@@ -125,7 +126,7 @@ class ChatView extends GetView<ChatController> {
         if (controller.messages.isEmpty) {
           return Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: Text('OpenLM',
+            child: Text(AppBrand.name,
                 style: GoogleFonts.inter(
                     fontWeight: FontWeight.w700,
                     fontSize: 18,

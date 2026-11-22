@@ -96,7 +96,7 @@ class _WebImageGenTestViewState extends State<WebImageGenTestView> {
                 ElevatedButton(
                   onPressed: _localImage.isModelLoaded.value ? _generate : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0A84FF),
+                    backgroundColor: const Color(0xFF0B8278),
                     foregroundColor: Colors.white,
                   ),
                   child: const Text('Generate'),

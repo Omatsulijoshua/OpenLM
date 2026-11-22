@@ -77,7 +77,7 @@ class HomeView extends GetView<HomeController> {
   }
 
   Widget _buildBottomNav(BuildContext context, bool isDark) {
-    final accent = isDark ? const Color(0xFF0A84FF) : const Color(0xFF007AFF);
+    final accent = isDark ? const Color(0xFF0B8278) : const Color(0xFF0F766E);
     final muted = isDark ? const Color(0xFF7C7C80) : const Color(0xFF8E8E93);
     final current = controller.currentTab.value;
     return Container(
@@ -141,7 +141,7 @@ class HomeView extends GetView<HomeController> {
   }
 
   Widget _buildSidebar(BuildContext context, bool isDark) {
-    final accent = isDark ? const Color(0xFF0A84FF) : const Color(0xFF007AFF);
+    final accent = isDark ? const Color(0xFF0B8278) : const Color(0xFF0F766E);
     final muted = Theme.of(context).hintColor;
 
     return Container(

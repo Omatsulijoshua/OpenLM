@@ -4,8 +4,8 @@ class AppColors {
   AppColors._();
 
   // ── Apple System Colors ──
-  static const Color primary = Color(0xFF007AFF);
-  static const Color primaryDim = Color(0xFF0A84FF);
+  static const Color primary = Color(0xFF0F766E);
+  static const Color primaryDim = Color(0xFF0B8278);
   static const Color secondary = Color(0xFF5856D6);
 
   // Semantic
@@ -26,7 +26,7 @@ class AppColors {
   static const Color card = Color(0xFF1C1C1E);
 
   // Chat Bubbles
-  static const Color userBubble = Color(0xFF007AFF);
+  static const Color userBubble = Color(0xFF0F766E);
   static const Color aiBubble = Color(0xFF1C1C1E);
   static const Color cmdBubble = Color(0xFF1A2E1A);
 

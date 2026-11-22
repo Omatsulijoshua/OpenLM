@@ -32,7 +32,7 @@ class AppTheme {
       dividerColor: separator,
       colorScheme: ColorScheme(
         brightness: brightness,
-        primary: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+        primary: isDark ? const Color(0xFF0B8278) : AppColors.primary,
         onPrimary: Colors.white,
         secondary: AppColors.secondary,
         onSecondary: textPrimary,
@@ -61,7 +61,7 @@ class AppTheme {
           fontWeight: FontWeight.w600,
           color: textPrimary,
         ),
-        iconTheme: IconThemeData(color: isDark ? const Color(0xFF0A84FF) : AppColors.primary),
+        iconTheme: IconThemeData(color: isDark ? const Color(0xFF0B8278) : AppColors.primary),
         systemOverlayStyle: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       ),
 
@@ -79,7 +79,7 @@ class AppTheme {
       // ── Bottom Nav ──
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: bg,
-        selectedItemColor: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+        selectedItemColor: isDark ? const Color(0xFF0B8278) : AppColors.primary,
         unselectedItemColor: textMuted,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
@@ -102,7 +102,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: isDark ? const Color(0xFF0A84FF) : AppColors.primary, width: 1),
+          borderSide: BorderSide(color: isDark ? const Color(0xFF0B8278) : AppColors.primary, width: 1),
         ),
         hintStyle: GoogleFonts.inter(color: textMuted, fontSize: 15),
         labelStyle: GoogleFonts.inter(color: textMuted, fontSize: 14),
@@ -111,7 +111,7 @@ class AppTheme {
       // ── Buttons ──
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+          backgroundColor: isDark ? const Color(0xFF0B8278) : AppColors.primary,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
@@ -122,7 +122,7 @@ class AppTheme {
 
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+          foregroundColor: isDark ? const Color(0xFF0B8278) : AppColors.primary,
           side: BorderSide(color: separator),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -132,14 +132,14 @@ class AppTheme {
 
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+          foregroundColor: isDark ? const Color(0xFF0B8278) : AppColors.primary,
           textStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500),
         ),
       ),
 
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+          backgroundColor: isDark ? const Color(0xFF0B8278) : AppColors.primary,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -167,7 +167,7 @@ class AppTheme {
       ),
 
       sliderTheme: SliderThemeData(
-        activeTrackColor: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+        activeTrackColor: isDark ? const Color(0xFF0B8278) : AppColors.primary,
         inactiveTrackColor: surfaceHigh,
         thumbColor: Colors.white,
         overlayColor: AppColors.primary.withValues(alpha: 0.1),
@@ -178,7 +178,7 @@ class AppTheme {
       // ── Chips ──
       chipTheme: ChipThemeData(
         backgroundColor: surface,
-        selectedColor: (isDark ? const Color(0xFF0A84FF) : AppColors.primary).withValues(alpha: 0.14),
+        selectedColor: (isDark ? const Color(0xFF0B8278) : AppColors.primary).withValues(alpha: 0.14),
         labelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         side: BorderSide(color: separator),
@@ -189,11 +189,11 @@ class AppTheme {
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) return (isDark ? const Color(0xFF0A84FF) : AppColors.primary).withValues(alpha: 0.14);
+            if (states.contains(WidgetState.selected)) return (isDark ? const Color(0xFF0B8278) : AppColors.primary).withValues(alpha: 0.14);
             return Colors.transparent;
           }),
           foregroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) return isDark ? const Color(0xFF0A84FF) : AppColors.primary;
+            if (states.contains(WidgetState.selected)) return isDark ? const Color(0xFF0B8278) : AppColors.primary;
             return textMuted;
           }),
           side: WidgetStateProperty.all(BorderSide(color: separator)),
@@ -214,7 +214,7 @@ class AppTheme {
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+        backgroundColor: isDark ? const Color(0xFF0B8278) : AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -227,12 +227,12 @@ class AppTheme {
       ),
       radioTheme: RadioThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return isDark ? const Color(0xFF0A84FF) : AppColors.primary;
+          if (states.contains(WidgetState.selected)) return isDark ? const Color(0xFF0B8278) : AppColors.primary;
           return textMuted;
         }),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: isDark ? const Color(0xFF0A84FF) : AppColors.primary,
+        color: isDark ? const Color(0xFF0B8278) : AppColors.primary,
         linearTrackColor: surfaceHigh,
       ),
       snackBarTheme: SnackBarThemeData(
@@ -247,8 +247,8 @@ class AppTheme {
   // Bubble colors
   static Color userBubbleColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF0A84FF)
-        : const Color(0xFF007AFF);
+        ? const Color(0xFF0B8278)
+        : const Color(0xFF0F766E);
   }
 
   static Color aiBubbleColor(BuildContext context) {

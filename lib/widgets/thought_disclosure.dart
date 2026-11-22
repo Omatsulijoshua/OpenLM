@@ -101,7 +101,7 @@ class _ThoughtDisclosureState extends State<ThoughtDisclosure>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final muted = Theme.of(context).hintColor;
     final accentColor =
-        isDark ? const Color(0xFF0A84FF) : const Color(0xFF007AFF);
+        isDark ? const Color(0xFF0B8278) : const Color(0xFF0F766E);
 
     // Inline disclosure: a quiet "Thought for 6s ›" line; expanded reasoning
     // sits behind a thin left rule, like a quote.
