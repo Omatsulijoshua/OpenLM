@@ -58,7 +58,15 @@ android {
         ndk {
             // arm64: full build (CPU variants + Vulkan). armeabi-v7a: plain CPU
             // build for phones running 32-bit Android (e.g. Android Go).
-            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
+            val flutterTargets =
+                project.findProperty("target-platform")?.toString()?.split(",")
+                    ?: emptyList()
+            val arm64Only = flutterTargets.isNotEmpty() &&
+                flutterTargets.all { it == "android-arm64" }
+            abiFilters.addAll(
+                if (arm64Only) listOf("arm64-v8a")
+                else listOf("arm64-v8a", "armeabi-v7a")
+            )
         }
         
         externalNativeBuild {
