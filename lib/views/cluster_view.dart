@@ -10,6 +10,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../core/ui.dart';
 import '../services/cluster_service.dart';
+import '../services/shared_session_service.dart';
 
 /// Device cluster: pick Master (runs the model) or Worker (lends this device),
 /// and pair them by scanning or sharing the worker's link/QR code.
@@ -72,7 +73,7 @@ class _ClusterViewState extends State<ClusterView> {
               const SizedBox(height: 16),
             ],
             ...switch (role) {
-              ClusterRole.off => _offSection(),
+              ClusterRole.off => [..._offSection(), ..._sharedChatSection(context)],
               ClusterRole.master => _masterSection(context),
               ClusterRole.worker => _workerSection(context),
             },
@@ -186,6 +187,7 @@ class _ClusterViewState extends State<ClusterView> {
         const SizedBox(height: 16),
       ],
       AppCard(padding: const EdgeInsets.fromLTRB(16, 24, 16, 20), child: body),
+      ..._sharedChatSection(context),
       SectionFootnote(ClusterService.workerStopsWithApp
           ? 'Keep this device plugged in, on the same Wi-Fi, with OpenLM open: '
               'system pauses background work. Close OpenLM to stop sharing.'
@@ -202,6 +204,7 @@ class _ClusterViewState extends State<ClusterView> {
 
   List<Widget> _masterSection(BuildContext context) {
     final t = AppTokens.of(context);
+    final shared = Get.find<SharedSessionService>();
     final isMobile = Platform.isAndroid || Platform.isIOS;
     return [
       if (cluster.split.length > 1) ...[
@@ -254,6 +257,47 @@ class _ClusterViewState extends State<ClusterView> {
         'fastest devices get the biggest share and devices that aren\'t needed '
         'are left out.',
       ),
+      const SectionHeader('Shared chat across devices'),
+      AppCard(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              'Keep this device as the model host. Other invited devices can view the same conversations and take primary chat control from any screen.',
+              style: t.body,
+            ),
+            const SizedBox(height: 14),
+            if (!shared.isHosting.value)
+              PrimaryButton(
+                label: 'Start shared chat',
+                icon: Icons.forum_outlined,
+                onPressed: _startSharedChat,
+              )
+            else if (shared.inviteLink == null)
+              Text('Waiting for a private Wi-Fi address…', style: t.caption)
+            else ...[
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+                  child: QrImageView(data: shared.inviteLink!, size: 190, padding: EdgeInsets.zero),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text('Invite devices on your trusted local network. The link grants access to shared history and chat control.', style: t.caption),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(child: PillButton(label: 'Copy invite link', icon: Icons.copy_rounded, onPressed: () {
+                  Clipboard.setData(ClipboardData(text: shared.inviteLink!));
+                  showToast('Copied', 'Shared chat invite copied.');
+                })),
+                const SizedBox(width: 10),
+                PillButton(label: 'Stop', icon: Icons.stop_circle_outlined, onPressed: shared.stopHost),
+              ]),
+            ],
+          ]),
+        ),
+      ),
       const SectionHeader('Other ways to add'),
       Row(children: [
         PillButton(
@@ -293,6 +337,74 @@ class _ClusterViewState extends State<ClusterView> {
         ]),
       ],
     ];
+  }
+
+  List<Widget> _sharedChatSection(BuildContext context) {
+    final t = AppTokens.of(context);
+    final shared = Get.find<SharedSessionService>();
+    return [
+      const SectionHeader('Shared chat across devices'),
+      AppCard(child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(
+            shared.isConnected.value
+                ? 'Primary chat control: ${shared.primaryName.value}. Conversations and history sync on this local network; the model stays on its host.'
+                : 'Join a host’s shared chat to see the same history. Any invited device can take over primary chat control; model inference remains on the host.',
+            style: t.body,
+          ),
+          const SizedBox(height: 12),
+          if (!shared.isConnected.value)
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              if (Platform.isAndroid || Platform.isIOS)
+                PillButton(label: 'Scan invite QR', icon: Icons.qr_code_scanner_rounded, onPressed: _scanSharedSession),
+              PillButton(label: 'Paste invite link', icon: Icons.paste_rounded, onPressed: _pasteSharedSession),
+            ])
+          else if (!shared.isPrimary.value)
+            PrimaryButton(label: 'Take over primary chat', icon: Icons.swap_horiz_rounded, onPressed: _takePrimaryControl)
+          else
+            Text('This device currently has primary chat control.', style: t.caption),
+          if (shared.isConnected.value) ...[
+            const SizedBox(height: 10),
+            Text('Shared chat uses unencrypted HTTP. Invite devices only on a trusted private network.', style: t.caption.copyWith(color: t.orange)),
+          ],
+        ]),
+      )),
+    ];
+  }
+
+  Future<void> _startSharedChat() async {
+    final shared = Get.find<SharedSessionService>();
+    try {
+      await shared.startHost(name: cluster.deviceName, address: cluster.wifiAddress.value);
+    } catch (e) {
+      showToast('Could not start shared chat', e.toString());
+    }
+  }
+
+  Future<void> _scanSharedSession() async {
+    final link = await Get.to<String>(() => const _QrScanPage());
+    if (link != null) await _joinSharedSession(link);
+  }
+
+  Future<void> _pasteSharedSession() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final link = data?.text?.trim() ?? '';
+    if (link.isEmpty) {
+      showToast('Clipboard empty', 'Copy a shared chat invite link first.');
+      return;
+    }
+    await _joinSharedSession(link);
+  }
+
+  Future<void> _joinSharedSession(String link) async {
+    final error = await Get.find<SharedSessionService>().joinFromLink(link);
+    if (error != null) showToast('Could not join shared chat', error);
+  }
+
+  Future<void> _takePrimaryControl() async {
+    final error = await Get.find<SharedSessionService>().takePrimaryControl();
+    if (error != null) showToast('Could not take control', error);
   }
 
   Future<void> _scanQr() async {

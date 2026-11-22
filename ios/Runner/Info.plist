@@ -84,7 +84,12 @@
 		</dict>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Phone cluster: lets your other devices on this Wi-Fi use this device to help run a model.</string>
+	<string>OpenLM uses your local network to share model computation and, when you choose, sync chat history and hand off chat control between your devices.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_openlm._tcp</string>

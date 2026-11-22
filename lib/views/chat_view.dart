@@ -13,6 +13,7 @@ import '../controllers/home_controller.dart';
 import '../services/cluster_service.dart';
 import '../services/inference_service.dart';
 import '../services/local_image_service.dart';
+import '../services/shared_session_service.dart';
 import '../ffi/sd_ffi_bindings.dart';
 import '../utils/thought_parser.dart';
 import '../widgets/attachment_preview.dart';
@@ -49,6 +50,7 @@ class ChatView extends GetView<ChatController> {
       body: Column(
         children: [
           _modelLoadingBar(context, isDark),
+          _sharedControlBar(context, isDark),
           Expanded(child: Obx(() {
             if (controller.currentSessionId.value.isEmpty ||
                 controller.messages.isEmpty) {
@@ -94,6 +96,56 @@ class ChatView extends GetView<ChatController> {
       );
     }
     return scaffold;
+  }
+
+  Widget _sharedControlBar(BuildContext context, bool isDark) {
+    final shared = Get.find<SharedSessionService>();
+    final foreground = isDark ? Colors.white : const Color(0xFF075E57);
+    final background =
+        isDark ? const Color(0xFF12312E) : const Color(0xFFE7F3F0);
+    return Obx(() {
+      if (!shared.isConnected.value) return const SizedBox.shrink();
+      final primary = shared.isPrimary.value;
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(14, 7, 10, 7),
+        color: background,
+        child: Row(children: [
+          Icon(Icons.devices_rounded, size: 16, color: foreground),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              primary
+                  ? 'You have primary chat control'
+                  : '${shared.primaryName.value} has primary chat control',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: foreground,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          if (!primary)
+            TextButton(
+              onPressed: () async {
+                final error = await shared.takePrimaryControl();
+                if (error != null) {
+                  showToast('Couldn’t take control', error,
+                      tone: ToastTone.error);
+                }
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: foreground,
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 9),
+              ),
+              child: const Text('Take over'),
+            ),
+        ]),
+      );
+    });
   }
 
   // ── AppBar ──

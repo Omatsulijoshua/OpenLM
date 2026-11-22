@@ -45,6 +45,7 @@ Pool your laptops, desktops, tablets, and phones to load big models (e.g., 14B, 
   - **LAN UDP Beaconing:** Automatic worker discovery on port `50053` across Wi-Fi and Ethernet.
   - **Apple Bonjour / mDNS:** Automatic peer discovery on Apple devices (`_openlm._tcp`).
   - **QR Code & Clipboard Links:** 1-tap connection via `openlm://worker?host=...&port=...` or standard IP input.
+- **Shared Chat & Handoff:** Opt in to a LAN invite from the model host. Invited devices sync saved text conversations and one device at a time can take primary chat control; inference stays on the original host. Image attachments are not synced. Shared traffic uses unencrypted HTTP and the invite is a bearer token, so only use this on a trusted local network.
 
 ### 3. Local Multimodal & Image Generation
 - **Vision Support:** Send images and analyze them with vision-language models (e.g., Qwen2-VL) locally or via cloud models.

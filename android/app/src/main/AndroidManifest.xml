@@ -17,11 +17,13 @@
     <!-- In-app updates from GitHub Releases -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <!-- Opt-in LAN shared chat uses authenticated HTTP links on trusted networks. -->
     <application
         android:label="OpenLM"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:largeHeap="true"
+        android:usesCleartextTraffic="true"
         android:extractNativeLibs="true">
         <activity
             android:name="com.orailnoor.privatelm.MainActivity"

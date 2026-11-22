@@ -20,6 +20,7 @@ import '../models/chat_session.dart';
 import '../ffi/sd_ffi_bindings.dart';
 import '../services/hive_service.dart';
 import '../services/inference_service.dart';
+import '../services/shared_session_service.dart';
 import '../services/cloud_service.dart';
 import '../services/local_image_service.dart';
 import '../services/app_log_service.dart';
@@ -100,6 +101,7 @@ class ChatController extends GetxController {
   bool _scrollListenerAttached = false;
   int _generationSerial = 0;
   bool _batchCancelled = false;
+  Worker? _sharedDataWorker;
 
   @override
   void onInit() {
@@ -111,6 +113,12 @@ class ChatController extends GetxController {
             defaultValue: false) ??
         false;
     loadSessions();
+    if (Get.isRegistered<SharedSessionService>()) {
+      _sharedDataWorker = ever<int>(
+        Get.find<SharedSessionService>().stateVersion,
+        (_) => _refreshSharedHistory(),
+      );
+    }
     _initSpeech();
   }
 
@@ -164,6 +172,7 @@ class ChatController extends GetxController {
 
   @override
   void onClose() {
+    _sharedDataWorker?.dispose();
     _scrollTimer?.cancel();
     if (_scrollListenerAttached) {
       scrollController.removeListener(_handleUserScroll);
@@ -187,10 +196,24 @@ class ChatController extends GetxController {
       ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
   }
 
+  void _refreshSharedHistory() {
+    loadSessions();
+    final id = currentSessionId.value;
+    if (id.isEmpty) return;
+    messages.value = _hive.getMessagesForChat(id)
+        .map((m) => ChatMessage.fromMap(m))
+        .toList()
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    _scrollToBottom();
+  }
+
   void createNewChat() {
     final id = _uuid.v4();
     final session = ChatSession(id: id, title: 'New Chat');
     _hive.saveSession(id, session.toMap());
+    if (Get.isRegistered<SharedSessionService>()) {
+      unawaited(Get.find<SharedSessionService>().publishSession(session));
+    }
     sessions.insert(0, session);
     openChat(id);
   }
@@ -217,6 +240,17 @@ class ChatController extends GetxController {
   }
 
   void deleteChat(String sessionId) {
+    final shared = Get.isRegistered<SharedSessionService>()
+        ? Get.find<SharedSessionService>()
+        : null;
+    if (shared != null && shared.isConnected.value && !shared.hasControl) {
+      showToast('Primary control required',
+          'Take primary chat control before deleting a shared conversation.');
+      return;
+    }
+    if (shared?.isConnected.value == true) {
+      unawaited(shared!.deleteSharedSession(sessionId));
+    }
     if (currentSessionId.value == sessionId && isLoading.value) {
       stopGenerating();
     }
@@ -570,6 +604,26 @@ class ChatController extends GetxController {
 
   Future<void> sendMessage() async {
     if (isLoading.value || isStreaming.value) return;
+    final shared = Get.isRegistered<SharedSessionService>()
+        ? Get.find<SharedSessionService>()
+        : null;
+    final sharedRemote = shared != null &&
+        shared.isConnected.value &&
+        !shared.isHosting.value;
+    if (shared != null && shared.isConnected.value && !shared.hasControl) {
+      showToast('Primary control is elsewhere',
+          'Take over primary chat control before sending a prompt.');
+      return;
+    }
+    if (sharedRemote &&
+        (selectedImagePath.value != null ||
+            selectedImageBase64.value != null ||
+            selectedFileType.value == 'image' ||
+            selectedFileType.value == 'audio')) {
+      showToast('Text only in shared chat',
+          'Shared chat currently supports text prompts and text attachments.');
+      return;
+    }
 
     final text = textController.text.trim();
     final hasAttachment =
@@ -623,6 +677,7 @@ class ChatController extends GetxController {
     );
     messages.add(userMsg);
     _hive.saveMessage(userMsg.id, userMsg.toMap());
+    unawaited(shared?.markLocalDataChanged() ?? Future<void>.value());
 
     // Clear input preview UI state — but KEEP the physical file on disk
     // because the native inference engine needs to read it during generation.
@@ -680,6 +735,7 @@ class ChatController extends GetxController {
           'local';
 
       String rawResponse;
+      ChatMessage? sharedResponse;
 
       // Build conversation history
       final history = messages
@@ -692,7 +748,12 @@ class ChatController extends GetxController {
               })
           .toList();
 
-      if (inferenceMode == 'local') {
+      if (sharedRemote) {
+        final session = sessions.firstWhere((item) => item.id == currentSessionId.value);
+        sharedResponse = await shared.generateOnHost(
+            session: session, userMessage: userMsg);
+        rawResponse = sharedResponse.content;
+      } else if (inferenceMode == 'local') {
         final localImage = Get.find<LocalImageService>();
 
         if (localImage.isModelLoaded.value) {
@@ -855,7 +916,7 @@ class ChatController extends GetxController {
           : null;
 
       // Display response directly (no command processing)
-      final aiMsg = ChatMessage(
+      final aiMsg = sharedResponse ?? ChatMessage(
         id: _uuid.v4(),
         chatId: currentSessionId.value,
         role: 'assistant',
@@ -865,8 +926,10 @@ class ChatController extends GetxController {
         thoughtDurationSeconds: thoughtDurationSeconds,
         imageGenDurationMs: genDurationMs,
       );
+      messages.removeWhere((m) => m.id == aiMsg.id);
       messages.add(aiMsg);
       _hive.saveMessage(aiMsg.id, aiMsg.toMap());
+      unawaited(shared?.markLocalDataChanged() ?? Future<void>.value());
       imageGenStartTime.value = null;
 
       // Update session

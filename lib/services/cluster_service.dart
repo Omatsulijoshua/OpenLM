@@ -22,6 +22,7 @@ import '../core/constants.dart';
 import '../core/ui.dart';
 import 'app_log_service.dart';
 import 'hive_service.dart';
+import 'shared_session_service.dart';
 
 /// What this device does in a device cluster.
 enum ClusterRole {
@@ -153,6 +154,8 @@ class ClusterService extends GetxService {
       });
       ever<ClusterWorkerStatus>(worker, (_) => _updateKeepScreenOn());
       ever<bool>(serving, (_) => _updateKeepScreenOn());
+      ever<bool>(Get.find<SharedSessionService>().isHosting,
+          (_) => _updateKeepScreenOn());
       refreshWifiAddress();
     }
   }
@@ -170,7 +173,9 @@ class ClusterService extends GetxService {
   bool? _screenKeptOn;
   void _updateKeepScreenOn() {
     final s = worker.value;
-    final on = s.running || s.starting || serving.value;
+    final sharedSession = Get.isRegistered<SharedSessionService>() &&
+        Get.find<SharedSessionService>().isHosting.value;
+    final on = s.running || s.starting || serving.value || sharedSession;
     if (on == _screenKeptOn) return;
     _screenKeptOn = on;
     LlamaCluster.setKeepScreenOn(on).catchError((_) {});
