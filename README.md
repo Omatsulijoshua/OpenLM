@@ -153,6 +153,9 @@ When loading a large model that exceeds the VRAM or RAM of a single computer or 
 git clone https://github.com/Omatsulijoshua/OpenLM.git
 cd openlm
 
+# Fetch native dependencies used by Android image generation
+git submodule update --init --recursive
+
 # Fetch dependencies
 flutter pub get
 ```
