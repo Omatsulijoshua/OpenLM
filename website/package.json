@@ -1,0 +1,6 @@
+{
+  "name": "openlm-field-guide",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": { "dev": "node server.mjs", "start": "node server.mjs" }
+}
