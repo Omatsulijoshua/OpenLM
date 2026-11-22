@@ -34,3 +34,15 @@ document.querySelectorAll('.shot').forEach(button=>button.addEventListener('clic
 document.querySelector('#close-lightbox').addEventListener('click',()=>dialog.close());
 dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
 dialog.addEventListener('close',()=>opener?.focus());
+const storeDialog=document.querySelector('#store-preview');let storeOpener;
+let publishedStores=0;
+document.querySelectorAll('[data-store]').forEach(link=>{
+  const url=window.OPENLM_STORES?.[link.dataset.store];
+  const valid=link.dataset.store==='googlePlay'?/^https:\/\/play\.google\.com\/store\/apps\/details\?/.test(url||''):/^https:\/\/apps\.apple\.com\//.test(url||'');
+  if(valid){link.href=url;link.querySelector('span').textContent='DOWNLOAD';link.setAttribute('aria-label',link.dataset.store==='googlePlay'?'Download OpenLM on Google Play':'Download OpenLM on the App Store');publishedStores++;}
+  else link.addEventListener('click',event=>{event.preventDefault();storeOpener=link;storeDialog.showModal();});
+});
+if(publishedStores===2)document.querySelector('#store-status').textContent='Download OpenLM for Android or iOS.';
+else if(publishedStores===1)document.querySelector('#store-status').textContent='One store is available. The other is coming soon.';
+document.querySelector('#close-store-preview').addEventListener('click',()=>storeDialog.close());
+storeDialog.addEventListener('close',()=>storeOpener?.focus());
