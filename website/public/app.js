@@ -35,14 +35,28 @@ document.querySelector('#close-lightbox').addEventListener('click',()=>dialog.cl
 dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
 dialog.addEventListener('close',()=>opener?.focus());
 const storeDialog=document.querySelector('#store-preview');let storeOpener;
-let publishedStores=0;
+const downloadNames={googlePlay:'Google Play',appStore:'the App Store',windows:'Windows',mac:'macOS'};
+let publishedDownloads=0;
 document.querySelectorAll('[data-store]').forEach(link=>{
-  const url=window.OPENLM_STORES?.[link.dataset.store];
-  const valid=link.dataset.store==='googlePlay'?/^https:\/\/play\.google\.com\/store\/apps\/details\?/.test(url||''):/^https:\/\/apps\.apple\.com\//.test(url||'');
-  if(valid){link.href=url;link.querySelector('span').textContent='DOWNLOAD';link.setAttribute('aria-label',link.dataset.store==='googlePlay'?'Download OpenLM on Google Play':'Download OpenLM on the App Store');publishedStores++;}
-  else link.addEventListener('click',event=>{event.preventDefault();storeOpener=link;storeDialog.showModal();});
+  const key=link.dataset.store;
+  const url=window.OPENLM_STORES?.[key];
+  let valid=false;
+  try {
+    const parsed=new URL(url);
+    valid=parsed.protocol==='https:';
+    if(key==='googlePlay')valid=valid && parsed.hostname==='play.google.com' && parsed.pathname==='/store/apps/details' && parsed.searchParams.has('id');
+    if(key==='appStore')valid=valid && parsed.hostname==='apps.apple.com';
+  } catch {}
+  if(valid){
+    link.href=url;link.querySelector('.download-status').textContent='DOWNLOAD AVAILABLE';
+    link.setAttribute('aria-label',`Download OpenLM for ${downloadNames[key]}`);publishedDownloads++;
+  } else link.addEventListener('click',event=>{
+    event.preventDefault();storeOpener=link;
+    document.querySelector('#store-preview-title').textContent=`OpenLM for ${downloadNames[key]}`;
+    storeDialog.showModal();
+  });
 });
-if(publishedStores===2)document.querySelector('#store-status').textContent='Download OpenLM for Android or iOS.';
-else if(publishedStores===1)document.querySelector('#store-status').textContent='One store is available. The other is coming soon.';
+if(publishedDownloads===4)document.querySelector('#store-status').textContent='Download OpenLM for your phone or computer.';
+else if(publishedDownloads>0)document.querySelector('#store-status').textContent='Available downloads are linked below. More platforms are coming soon.';
 document.querySelector('#close-store-preview').addEventListener('click',()=>storeDialog.close());
 storeDialog.addEventListener('close',()=>storeOpener?.focus());

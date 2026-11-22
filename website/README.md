@@ -12,3 +12,6 @@ The walkthrough is a conceptual illustration, not live inference. App screenshot
 
 Edit public/store-links.js to replace the empty googlePlay and appStore values with published listing URLs. Until then the badges open a clearly labeled demo preview. Assets are the official Apple SVG and Google Play badge PNG, stored locally for sharp rendering without an external image request.
 
+
+Windows and macOS direct download placeholders are also configured in public/store-links.js using the windows and mac keys. Use HTTPS URLs to your installers or archives. Empty values open a sample preview.
+
