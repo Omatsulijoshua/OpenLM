@@ -8,8 +8,20 @@
 
 **OpenLM** is a privacy-first, cross-platform AI client and distributed inference engine. It runs local GGUF models directly on laptops, desktops, and phones with native hardware acceleration, while allowing you to **pool memory across multiple devices** (Windows, macOS, Linux, Android, iOS) into a single distributed cluster to load and chat with large models that wouldn't fit on any single device alone.
 
-![OpenLM running on a Galaxy S8](screenshots/openlm-galaxy-s8.png)
-_Screenshot captured from the app running on a Galaxy S8._
+## Screenshots
+
+Captured from OpenLM running on a Galaxy S8.
+
+<table>
+  <tr>
+    <td align="center"><img src="screenshots/openlm-chat.png" alt="OpenLM Chat screen" width="240"><br>Chat</td>
+    <td align="center"><img src="screenshots/openlm-models.png" alt="OpenLM Models screen" width="240"><br>Models</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="screenshots/openlm-server.png" alt="OpenLM Server screen" width="240"><br>Server</td>
+    <td align="center"><img src="screenshots/openlm-settings.png" alt="OpenLM Settings screen" width="240"><br>Settings</td>
+  </tr>
+</table>
 
 ---
 
