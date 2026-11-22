@@ -1,6 +1,6 @@
 # OpenLM website brief
 
-Build an original public website for Omatsuli Joshua Toritseju's OpenLM fork, hosted on Vercel at openlm.thispages.xyz. Implement in `website/` independently of Flutter's `web/` application.
+Build an original public website for Omatsuli Joshua Toritseju's OpenLM fork, hosted on Vercel at openlm.thispage.xyz. Implement in `website/` independently of Flutter's `web/` application.
 
 ## Creative direction
 

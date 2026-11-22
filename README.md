@@ -2,7 +2,7 @@
 
 **An independent OpenLM fork by Omatsuli Joshua Toritseju**
 
-[Explore the OpenLM website](https://openlm-field-guide.vercel.app) — an illustrated guide to sharing local AI across devices. Website source: [website/](website/); design brief: [prompt.md](prompt.md).
+[Explore the OpenLM website](https://openlm.thispage.xyz) — an illustrated guide to sharing local AI across devices. Website source: [website/](website/); design brief: [prompt.md](prompt.md).
 
 [![Cross-Platform Flutter](https://img.shields.io/badge/Flutter-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20iOS%20%7C%20Android-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Local LLM Inference](https://img.shields.io/badge/Inference-Local%20GGUF%20%2B%20ggml--rpc%20Cluster-00C853?style=for-the-badge)](https://github.com/ggerganov/llama.cpp)
