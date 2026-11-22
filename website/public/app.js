@@ -1,8 +1,8 @@
 const phases = [
-  {title:'Meet the devices.',detail:'The coordinator discovers paired workers on the same local network. Each device offers a memory budget.',states:['Ready','Paired','Paired'],answer:'Waiting for the cluster',active:[]},
-  {title:'Give the weights a home.',detail:'An illustrative 18 GB of weights is placed across the three devices: 9 GB, 6 GB and 3 GB. Each holds a different part of the model.',states:['9 GB placed','6 GB placed','3 GB placed'],answer:'Weights loaded. Ready for a prompt.',active:[0,1,2]},
-  {title:'Pass the computation along.',detail:'Layer groups compute on their assigned devices. Intermediate activations cross the network; the full model is not copied to every worker.',states:['Computing','Computing','Computing'],answer:'Processing “Why share a model?”',active:[0,1,2]},
-  {title:'One conversation comes back.',detail:'The coordinator returns the next token to the chat. Generation repeats this process for each token. The speed depends on your hardware and network.',states:['Returning token','Connected','Connected'],answer:'So a model can use more memory than one device can offer.',active:[0]}
+  {title:'Meet the devices.',detail:'A laptop, desktop, tablet and phone join the same local network. Each device offers a memory budget.',states:['Ready','Paired','Paired','Paired'],answer:'Waiting for the cluster',active:[]},
+  {title:'Give the weights a home.',detail:'An illustrative 18 GB of weights is placed across four devices: 6 GB, 5 GB, 4 GB and 3 GB. Each holds a different part of the model.',states:['6 GB placed','5 GB placed','4 GB placed','3 GB placed'],answer:'Weights loaded. Ready for a prompt.',active:[0,1,2]},
+  {title:'Pass the computation along.',detail:'Layer groups compute on their assigned devices. Intermediate activations cross the network; the full model is not copied to every worker.',states:['Computing','Computing','Computing','Computing'],answer:'Processing “Why share a model?”',active:[0,1,2]},
+  {title:'One conversation comes back.',detail:'The coordinator returns the next token to the chat. Generation repeats this process for each token. The speed depends on your hardware and network.',states:['Returning token','Connected','Connected','Connected'],answer:'So a model can use more memory than one device can offer.',active:[0]}
 ];
 let step=0,timer=null;
 const network=document.querySelector('.device-network');
