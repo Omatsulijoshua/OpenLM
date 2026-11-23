@@ -88,6 +88,8 @@ jobs:
   # ── Android APKs ─────────────────────────────────────────────────────────
   build-android:
     name: Build Android APKs
+    # Set this repository variable only after configuring the four signing secrets below.
+    if: ${{ vars.ANDROID_RELEASE_SIGNING_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -110,9 +112,22 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build Split-per-ABI APKs
+      - name: Configure release signing
         env:
-          PRIVATELM_ALLOW_DEBUG_RELEASE_SIGNING: "true"
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/release-keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=$PWD/android/release-keystore.jks
+          EOF
+
+      - name: Build Split-per-ABI APKs
         run: flutter build apk --release --split-per-abi
 
       - name: Collect APKs
