@@ -1,7 +1,8 @@
-// Add your published listing URLs here. Empty strings keep demo mode enabled.
+// Direct downloads. Empty strings keep the preview for unpublished platforms.
 window.OPENLM_STORES = {
-  googlePlay: '', // https://play.google.com/store/apps/details?id=YOUR_PACKAGE
-  appStore: '',   // https://apps.apple.com/app/YOUR_APP_ID
-  windows: '',   // HTTPS URL to your Windows installer or ZIP
-  mac: ''        // HTTPS URL to your macOS DMG or ZIP
+  android: 'https://drive.google.com/file/d/1b3unHxJaCwl1V3wExThF38qFqZE9sbmF/view?usp=sharing',
+  appStore: '',
+  windows: 'https://drive.google.com/file/d/1wjsJL5je3RYtOwCkBPiZo2D6xdyUGffP/view?usp=sharing',
+  linux: 'https://drive.google.com/file/d/13MiuZEbeSSIm7nyQAcYXBUbAPxNCae9e/view?usp=sharing',
+  mac: ''
 };

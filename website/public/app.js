@@ -35,7 +35,7 @@ document.querySelector('#close-lightbox').addEventListener('click',()=>dialog.cl
 dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
 dialog.addEventListener('close',()=>opener?.focus());
 const storeDialog=document.querySelector('#store-preview');let storeOpener;
-const downloadNames={googlePlay:'Google Play',appStore:'the App Store',windows:'Windows',mac:'macOS'};
+const downloadNames={android:'Android APK',appStore:'the App Store',windows:'Windows',linux:'Linux',mac:'macOS'};
 let publishedDownloads=0;
 document.querySelectorAll('[data-store]').forEach(link=>{
   const key=link.dataset.store;
@@ -44,7 +44,6 @@ document.querySelectorAll('[data-store]').forEach(link=>{
   try {
     const parsed=new URL(url);
     valid=parsed.protocol==='https:';
-    if(key==='googlePlay')valid=valid && parsed.hostname==='play.google.com' && parsed.pathname==='/store/apps/details' && parsed.searchParams.has('id');
     if(key==='appStore')valid=valid && parsed.hostname==='apps.apple.com';
   } catch {}
   if(valid){
@@ -56,7 +55,7 @@ document.querySelectorAll('[data-store]').forEach(link=>{
     storeDialog.showModal();
   });
 });
-if(publishedDownloads===4)document.querySelector('#store-status').textContent='Download OpenLM for your phone or computer.';
-else if(publishedDownloads>0)document.querySelector('#store-status').textContent='Available downloads are linked below. More platforms are coming soon.';
+if(publishedDownloads===5)document.querySelector('#store-status').textContent='Download OpenLM for your phone or computer.';
+else if(publishedDownloads>0)document.querySelector('#store-status').textContent='Android, Windows and Linux downloads are available. iOS and macOS are coming soon.';
 document.querySelector('#close-store-preview').addEventListener('click',()=>storeDialog.close());
 storeDialog.addEventListener('close',()=>storeOpener?.focus());
