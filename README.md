@@ -12,6 +12,14 @@
 
 ## Screenshots
 
+### Windows
+
+Captured from the OpenLM desktop app running on Windows.
+
+<p align="center"><img src="screenshots/openlm-windows.png" alt="OpenLM running on Windows" width="900"></p>
+
+### Android phone
+
 Captured from OpenLM running on a Galaxy S8.
 
 <table>
@@ -24,6 +32,8 @@ Captured from OpenLM running on a Galaxy S8.
     <td align="center"><img src="screenshots/openlm-settings.png" alt="OpenLM Settings screen" width="240"><br>Settings</td>
   </tr>
 </table>
+
+A tablet screenshot will be added when a tablet or tablet-compatible Android build is available. The connected emulator currently cannot run the arm64 APK.
 
 ---
 
