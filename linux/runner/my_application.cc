@@ -1,6 +1,9 @@
 #include "my_application.h"
 
 #include <flutter_linux/flutter_linux.h>
+#include <limits.h>
+#include <unistd.h>
+#include <glib/gstdio.h>
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
 #endif
@@ -24,6 +27,19 @@ static void my_application_activate(GApplication* application) {
   MyApplication* self = MY_APPLICATION(application);
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
+
+  // Resolve the app icon relative to the relocatable release bundle.
+  char executable_path[PATH_MAX];
+  const ssize_t executable_length =
+      readlink("/proc/self/exe", executable_path, sizeof(executable_path) - 1);
+  if (executable_length > 0) {
+    executable_path[executable_length] = '\0';
+    g_autofree gchar* executable_dir = g_path_get_dirname(executable_path);
+    g_autofree gchar* icon_path = g_build_filename(
+        executable_dir, "share", "icons", "hicolor", "512x512", "apps",
+        "openlm.png", nullptr);
+    gtk_window_set_icon_from_file(window, icon_path, nullptr);
+  }
 
   // Use a header bar when running in GNOME as this is the common style used
   // by applications and is the setup most users will be using (e.g. Ubuntu

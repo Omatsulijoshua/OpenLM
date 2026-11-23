@@ -7,7 +7,7 @@ project(runner LANGUAGES CXX)
 set(BINARY_NAME "openlm")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "com.orailnoor.privatelm")
+set(APPLICATION_ID "com.omatsuli.openlm")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
@@ -120,6 +120,13 @@ install(CODE "
   " COMPONENT Runtime)
 install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
   DESTINATION "${INSTALL_BUNDLE_DATA_DIR}" COMPONENT Runtime)
+
+# Ship the Linux desktop icon with the relocatable release bundle.
+install(FILES "${CMAKE_SOURCE_DIR}/../assets/icons/openlm-mark.png"
+  DESTINATION "${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/512x512/apps"
+  RENAME "openlm.png")
+install(PROGRAMS "${CMAKE_SOURCE_DIR}/install-desktop.sh"
+  DESTINATION "${CMAKE_INSTALL_PREFIX}" RENAME "install-desktop.sh")
 
 # Install the AOT library on non-Debug builds only.
 if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")

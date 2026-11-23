@@ -173,6 +173,10 @@ The output executable is generated at `build/windows/x64/runner/Release/openlm.e
 flutter build linux --release
 ```
 The output bundle is generated at `build/linux/x64/release/bundle/`.
+The Linux build uses the teal faceted OpenLM mark in its desktop sidebar and
+window icon. To add it to your desktop app launcher after extracting a release,
+run `./install-desktop.sh` from the bundle directory; this installs OpenLM under
+`~/.local/opt/openlm` and creates a launcher entry for your user.
 
 #### macOS (via Xcode or CLI)
 You can build the macOS app directly using Flutter or open the project in Xcode:
