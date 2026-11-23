@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <sstream>
 #include <android/log.h>
 #ifdef SD_JNI_HAVE_VULKAN
 #include <vulkan/vulkan.h>
@@ -19,6 +20,129 @@ static sd_ctx_t* g_sd_ctx = nullptr;
 static JavaVM* g_jvm = nullptr;
 static jobject g_progress_callback = nullptr;
 static std::string g_model_path;
+
+static const char* sample_method_name(int method) {
+    static const char* names[] = {
+        "euler", "euler_a", "heun", "dpm2", "dpm++2s_a", "dpm++2m",
+        "dpm++2mv2", "ipndm", "ipndm_v", "lcm", "ddim_trailing", "tcd",
+        "res_multistep", "res_2s", "er_sde"};
+    return method >= 0 && method < (int)(sizeof(names) / sizeof(names[0]))
+        ? names[method] : "euler_a";
+}
+
+static const char* schedule_name(int schedule) {
+    static const char* names[] = {
+        "discrete", "karras", "exponential", "ays", "gits", "sgm_uniform",
+        "simple", "smoothstep", "kl_optimal", "lcm", "bong_tangent"};
+    return schedule >= 0 && schedule < (int)(sizeof(names) / sizeof(names[0]))
+        ? names[schedule] : "discrete";
+}
+
+static sd_ctx_t* create_sd_context(const char* model_path, int n_threads,
+                                   bool flash_attn, int wtype, int backend,
+                                   bool offload_params_to_cpu, bool enable_mmap,
+                                   const char* vae_path, const char* clip_l_path,
+                                   const char* taesd_path, float max_vram) {
+    sd_ctx_opt_t* options = sd_ctx_opt_create();
+    if (!options) return nullptr;
+    bool ok = sd_opt_set_string(options, "model_path", model_path ? model_path : "") == SD_STATUS_OK;
+    if (ok && n_threads > 0) ok = sd_opt_set_int(options, "n_threads", n_threads) == SD_STATUS_OK;
+    if (ok) ok = sd_opt_set_bool(options, "flash_attn", flash_attn) == SD_STATUS_OK;
+    if (ok) ok = sd_opt_set_bool(options, "enable_mmap", enable_mmap) == SD_STATUS_OK;
+    if (ok) ok = sd_opt_set_string(options, "wtype", sd_type_name((sd_type_t)wtype)) == SD_STATUS_OK;
+    if (ok && offload_params_to_cpu)
+        ok = sd_opt_set_bool(options, "auto_fit", true) == SD_STATUS_OK;
+    if (ok && backend >= 0 && backend <= 2) {
+        const char* backend_name = backend == 0 ? "cpu" : backend == 1 ? "vulkan" : "opencl";
+        ok = sd_opt_set_string(options, "backend", backend_name) == SD_STATUS_OK;
+    }
+    if (ok && vae_path && vae_path[0])
+        ok = sd_opt_set_string(options, "vae_path", vae_path) == SD_STATUS_OK;
+    if (ok && clip_l_path && clip_l_path[0])
+        ok = sd_opt_set_string(options, "clip_l_path", clip_l_path) == SD_STATUS_OK;
+    if (ok && taesd_path && taesd_path[0])
+        ok = sd_opt_set_string(options, "taesd_path", taesd_path) == SD_STATUS_OK;
+    if (ok && max_vram > 0.0f) {
+        std::ostringstream limit;
+        limit << max_vram << "G";
+        ok = sd_opt_set_string(options, "max_vram", limit.str().c_str()) == SD_STATUS_OK;
+    }
+    sd_ctx_t* ctx = nullptr;
+    if (ok && sd_ctx_create(options, &ctx) != SD_STATUS_OK) {
+        LOGE("Stable Diffusion context creation failed: %s", sd_get_last_error());
+    } else if (!ok) {
+        LOGE("Invalid Stable Diffusion context option: %s", sd_get_last_error());
+    }
+    sd_opt_free(options);
+    return ctx;
+}
+
+static uint8_t* generate_rgb(sd_ctx_t* ctx, const char* prompt,
+                             const char* negative_prompt, int width, int height,
+                             int steps, int64_t seed, float cfg_scale,
+                             int method, int schedule, bool vae_tiling,
+                             size_t* out_size, int* out_width = nullptr,
+                             int* out_height = nullptr) {
+    if (!ctx || !out_size) return nullptr;
+    *out_size = 0;
+    sd_img_gen_opt_t* options = sd_img_gen_opt_create();
+    if (!options) return nullptr;
+    bool ok = sd_opt_set_string(options, "prompt", prompt ? prompt : "") == SD_STATUS_OK;
+    if (ok && negative_prompt && negative_prompt[0])
+        ok = sd_opt_set_string(options, "negative_prompt", negative_prompt) == SD_STATUS_OK;
+    if (ok) ok = sd_opt_set_int(options, "width", width > 0 ? width : 512) == SD_STATUS_OK;
+    if (ok) ok = sd_opt_set_int(options, "height", height > 0 ? height : 512) == SD_STATUS_OK;
+    if (ok) ok = sd_opt_set_int(options, "sample.steps", steps > 0 ? steps : 4) == SD_STATUS_OK;
+    if (ok) ok = sd_opt_set_int(options, "seed", seed) == SD_STATUS_OK;
+    if (ok) ok = sd_opt_set_float(options, "sample.guidance.txt_cfg", cfg_scale) == SD_STATUS_OK;
+    if (ok) ok = sd_opt_set_float(options, "sample.eta", 0.0) == SD_STATUS_OK;
+    if (ok) ok = sd_opt_set_string(options, "sample.method", sample_method_name(method)) == SD_STATUS_OK;
+    if (ok) ok = sd_opt_set_string(options, "sample.scheduler", schedule_name(schedule)) == SD_STATUS_OK;
+    if (ok && vae_tiling) {
+        ok = sd_opt_set_bool(options, "vae_tiling.enabled", true) == SD_STATUS_OK &&
+             sd_opt_set_int(options, "vae_tiling.tile_size_w", 64) == SD_STATUS_OK &&
+             sd_opt_set_int(options, "vae_tiling.tile_size_h", 64) == SD_STATUS_OK;
+    }
+    if (!ok) {
+        LOGE("Invalid Stable Diffusion image option: %s", sd_get_last_error());
+        sd_opt_free(options);
+        return nullptr;
+    }
+
+    sd_result_t* result = nullptr;
+    if (sd_generate_image(ctx, options, &result) != SD_STATUS_OK) {
+        LOGE("Stable Diffusion image generation failed: %s", sd_get_last_error());
+        sd_opt_free(options);
+        sd_result_free(result);
+        return nullptr;
+    }
+    const sd_tensor_t* image = sd_result_get_image(result, 0);
+    uint8_t* rgb = nullptr;
+    if (image && sd_tensor_type(image) == SD_TENSOR_U8 && sd_tensor_rank(image) == 3) {
+        const size_t channels = (size_t)sd_tensor_dim(image, 0);
+        const size_t image_width = (size_t)sd_tensor_dim(image, 1);
+        const size_t image_height = (size_t)sd_tensor_dim(image, 2);
+        const uint8_t* planar = (const uint8_t*)sd_tensor_data(image);
+        if (channels >= 3 && image_width && image_height && planar) {
+            const size_t pixels = image_width * image_height;
+            rgb = (uint8_t*)malloc(pixels * 3);
+            if (rgb) {
+                for (size_t i = 0; i < pixels; ++i) {
+                    rgb[i * 3] = planar[i * channels];
+                    rgb[i * 3 + 1] = planar[i * channels + 1];
+                    rgb[i * 3 + 2] = planar[i * channels + 2];
+                }
+                *out_size = pixels * 3;
+                if (out_width) *out_width = (int)image_width;
+                if (out_height) *out_height = (int)image_height;
+            }
+        }
+    }
+    if (!rgb) LOGE("Stable Diffusion returned an invalid image tensor");
+    sd_result_free(result);
+    sd_opt_free(options);
+    return rgb;
+}
 
 extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
     g_jvm = vm;
@@ -225,7 +349,7 @@ Java_com_example_sd_1flutter_1android_SdFlutterAndroidPlugin_initModel(
     JNIEnv* env, jobject thiz, jstring model_path, jboolean use_gpu) {
 
     if (g_sd_ctx) {
-        free_sd_ctx(g_sd_ctx);
+        sd_ctx_free(g_sd_ctx);
         g_sd_ctx = nullptr;
     }
 
@@ -254,19 +378,13 @@ Java_com_example_sd_1flutter_1android_SdFlutterAndroidPlugin_initModel(
     LOGI("Vulkan not compiled in — using CPU only");
 #endif
 
-    sd_ctx_params_t params;
-    sd_ctx_params_init(&params);
-    params.model_path = path;
-
     // Limit threads on mobile to reduce memory pressure and thermal throttling.
-    int cores = sd_get_num_physical_cores();
-    params.n_threads = (cores > 4) ? 4 : cores;
-
-    // Match iOS behaviour: keep buffers alive between generations.
-    params.free_params_immediately = false;
-
-    LOGI("Initializing SD model from: %s (threads=%d, useGpu=%d)", path, params.n_threads, use_gpu == JNI_TRUE ? 1 : 0);
-    g_sd_ctx = new_sd_ctx(&params);
+    const int cores = sd_get_num_physical_cores();
+    const int n_threads = (cores > 4) ? 4 : cores;
+    LOGI("Initializing SD model from: %s (threads=%d, requestedGpu=%d)",
+         path, n_threads, use_gpu == JNI_TRUE ? 1 : 0);
+    g_sd_ctx = create_sd_context(path, n_threads, false, SD_TYPE_F16, 0,
+                                 false, true, nullptr, nullptr, nullptr, 0.0f);
 
     env->ReleaseStringUTFChars(model_path, path);
 
@@ -290,22 +408,6 @@ Java_com_example_sd_1flutter_1android_SdFlutterAndroidPlugin_generateImage(
 
     const char* p_str = env->GetStringUTFChars(prompt, nullptr);
 
-    sd_img_gen_params_t params;
-    sd_img_gen_params_init(&params);
-    params.prompt = p_str;
-    params.sample_params.sample_steps = steps;
-    params.width = 512;
-    params.height = 512;
-    params.sample_params.sample_method = EULER_A_SAMPLE_METHOD;
-
-    // Distilled models (SDXS, LCM, etc.) break with standard CFG=7.0
-    if (g_model_path.find("distilled") != std::string::npos ||
-        g_model_path.find("sdxs") != std::string::npos ||
-        g_model_path.find("lcm") != std::string::npos) {
-        params.sample_params.guidance.txt_cfg = 1.0f;
-        LOGI("Distilled model detected — using CFG=1.0");
-    }
-
     LOGI("Generating image for prompt: %s", p_str);
 
     // Fire a step-0 callback immediately so the UI shows progress right away
@@ -322,14 +424,13 @@ Java_com_example_sd_1flutter_1android_SdFlutterAndroidPlugin_generateImage(
         }
     }
 
-    sd_image_t* result = generate_image(g_sd_ctx, &params);
-
-    if (result) {
-        LOGI("Image generated: %dx%d channels=%d", result->width, result->height, result->channel);
-        if (result->channel >= 3 && result->data) {
-            LOGI("First pixel RGB: %d %d %d", result->data[0], result->data[1], result->data[2]);
-        }
-    }
+    const bool distilled = g_model_path.find("distilled") != std::string::npos ||
+        g_model_path.find("sdxs") != std::string::npos ||
+        g_model_path.find("lcm") != std::string::npos;
+    size_t size = 0;
+    int width = 512, height = 512;
+    uint8_t* result = generate_rgb(g_sd_ctx, p_str, nullptr, width, height,
+        steps, -1, distilled ? 1.0f : 7.0f, 1, 0, true, &size, &width, &height);
 
     env->ReleaseStringUTFChars(prompt, p_str);
 
@@ -343,17 +444,13 @@ Java_com_example_sd_1flutter_1android_SdFlutterAndroidPlugin_generateImage(
         return nullptr;
     }
 
-    size_t size = result->width * result->height * result->channel;
     jbyteArray array = env->NewByteArray(size);
     if (!array) {
         LOGE("Failed to allocate ByteArray of size %zu (OOM?)", size);
-        free(result->data);
         free(result);
         return nullptr;
     }
-    env->SetByteArrayRegion(array, 0, size, (jbyte*)result->data);
-
-    free(result->data);
+    env->SetByteArrayRegion(array, 0, size, (jbyte*)result);
     free(result);
 
     return array;
@@ -363,7 +460,7 @@ extern "C" JNIEXPORT void JNICALL
 Java_com_example_sd_1flutter_1android_SdFlutterAndroidPlugin_unloadModel(
     JNIEnv* env, jobject thiz) {
     if (g_sd_ctx) {
-        free_sd_ctx(g_sd_ctx);
+        sd_ctx_free(g_sd_ctx);
         g_sd_ctx = nullptr;
     }
     if (g_progress_callback) {
@@ -439,7 +536,7 @@ SD_FFI_API void* sd_ffi_init_ex(const char* model_path,
                                 bool keep_vae_on_cpu,
                                 float max_vram) {
     if (g_ffi_sd_ctx) {
-        free_sd_ctx(g_ffi_sd_ctx);
+        sd_ctx_free(g_ffi_sd_ctx);
         g_ffi_sd_ctx = nullptr;
     }
     g_ffi_model_path = model_path ? model_path : "";
@@ -462,44 +559,14 @@ SD_FFI_API void* sd_ffi_init_ex(const char* model_path,
         LOGI("[FFI] Backend: OpenCL");
     }
 
-    sd_ctx_params_t params;
-    sd_ctx_params_init(&params);
-    params.model_path = model_path ? model_path : "";
-    params.n_threads = (n_threads > 0) ? n_threads : sd_get_num_physical_cores();
-    params.flash_attn = flash_attn;
-    params.free_params_immediately = false;
-    params.wtype = (sd_type_t)wtype;
-    params.offload_params_to_cpu = offload_params_to_cpu;
-    params.enable_mmap = enable_mmap;
-    params.keep_vae_on_cpu = keep_vae_on_cpu;
-    if (max_vram > 0.0f) {
-        params.max_vram = max_vram;
-    }
-
-    // NOTE: vae_tiling is NOT a member of sd_ctx_params_t.
-    // It belongs to sd_img_gen_params_t and is applied per-generation in sd_ffi_generate().
-    (void)vae_tiling;
-
-    if (vae_path && vae_path[0] != '\0') {
-        params.vae_path = vae_path;
-        LOGI("[FFI] Using separate VAE: %s", vae_path);
-    }
-    if (clip_l_path && clip_l_path[0] != '\0') {
-        params.clip_l_path = clip_l_path;
-        LOGI("[FFI] Using separate CLIP-L: %s", clip_l_path);
-    }
-
-    // TAESD: tiny autoencoder for much faster VAE decode (10-30s saved per image)
-    if (taesd_path && taesd_path[0] != '\0') {
-        params.taesd_path = taesd_path;
-        LOGI("[FFI] Using TAESD for fast decode: %s", taesd_path);
-    }
-
-    LOGI("[FFI] Initializing SD model: %s (threads=%d, flash_attn=%d, wtype=%d, backend=%d, offload=%d, mmap=%d, keep_vae_cpu=%d)",
-         model_path, params.n_threads, flash_attn, wtype, backend,
-         offload_params_to_cpu, enable_mmap, keep_vae_on_cpu);
-
-    g_ffi_sd_ctx = new_sd_ctx(&params);
+    const int threads = n_threads > 0 ? n_threads : sd_get_num_physical_cores();
+    (void)keep_vae_on_cpu; // The opaque C API delegates VAE placement to its memory planner.
+    g_ffi_sd_ctx = create_sd_context(model_path, threads, flash_attn, wtype,
+        backend, offload_params_to_cpu, enable_mmap, vae_path, clip_l_path,
+        taesd_path, max_vram);
+    (void)vae_tiling; // Tiling is configured per generation below.
+    LOGI("[FFI] Initialized SD context (threads=%d, wtype=%s, backend=%d)",
+         threads, sd_type_name((sd_type_t)wtype), backend);
     return g_ffi_sd_ctx;
 }
 
@@ -511,7 +578,7 @@ SD_FFI_API void* sd_ffi_init(const char* model_path, int n_threads, bool flash_a
 // Free model context.
 SD_FFI_API void sd_ffi_free(void* ctx) {
     if (ctx) {
-        free_sd_ctx((sd_ctx_t*)ctx);
+        sd_ctx_free((sd_ctx_t*)ctx);
     }
     if (g_ffi_sd_ctx == ctx) {
         g_ffi_sd_ctx = nullptr;
@@ -536,36 +603,12 @@ SD_FFI_API uint8_t* sd_ffi_generate(void* ctx,
     if (!ctx || !out_size) return nullptr;
     *out_size = 0;
 
-    sd_img_gen_params_t params;
-    sd_img_gen_params_init(&params);
-    params.prompt = prompt ? prompt : "";
-    params.negative_prompt = negative_prompt ? negative_prompt : "";
-    params.width = width > 0 ? width : 512;
-    params.height = height > 0 ? height : 512;
-    params.seed = seed;
-    params.batch_count = 1;
-
-    params.sample_params.sample_method = (sample_method_t)sample_method;
-    params.sample_params.scheduler = (scheduler_t)schedule;
-    params.sample_params.sample_steps = steps > 0 ? steps : 4;
-    params.sample_params.guidance.txt_cfg = cfg_scale;
-    params.sample_params.eta = 0.0f;
-
-    if (vae_tiling) {
-        params.vae_tiling_params.enabled = true;
-        params.vae_tiling_params.tile_size_x = 64;
-        params.vae_tiling_params.tile_size_y = 64;
-    }
-
-    // Distilled models need CFG=1.0
-    if (g_ffi_model_path.find("distilled") != std::string::npos ||
+    const bool distilled = g_ffi_model_path.find("distilled") != std::string::npos ||
         g_ffi_model_path.find("sdxs") != std::string::npos ||
-        g_ffi_model_path.find("lcm") != std::string::npos) {
-        params.sample_params.guidance.txt_cfg = 1.0f;
-    }
-
+        g_ffi_model_path.find("lcm") != std::string::npos;
+    if (distilled) cfg_scale = 1.0f;
     LOGI("[FFI] Generating: %s (%dx%d, steps=%d, seed=%ld, cfg=%.1f, method=%d, sched=%d)",
-         params.prompt, params.width, params.height, steps, (long)seed, cfg_scale,
+         prompt ? prompt : "", width, height, steps, (long)seed, cfg_scale,
          sample_method, schedule);
 
     // Fire step-0 callback immediately (upstream only calls after step 1 completes)
@@ -574,36 +617,15 @@ SD_FFI_API uint8_t* sd_ffi_generate(void* ctx,
     }
 
     LOGI("[FFI] [PHASE] Calling generate_image()...");
-    sd_image_t* result = generate_image((sd_ctx_t*)ctx, &params);
+    int result_width = 0, result_height = 0;
+    uint8_t* result = generate_rgb((sd_ctx_t*)ctx, prompt, negative_prompt,
+        width, height, steps, seed, cfg_scale, sample_method, schedule,
+        vae_tiling, out_size, &result_width, &result_height);
     LOGI("[FFI] [PHASE] generate_image() returned");
-
-    if (!result) {
-        LOGE("[FFI] generate_image returned null");
-        return nullptr;
-    }
-    if (result->channel != 3) {
-        LOGE("[FFI] Unexpected channel count: %d", result->channel);
-        free(result->data);
-        free(result);
-        return nullptr;
-    }
-
-    size_t pixel_count = (size_t)result->width * result->height * result->channel;
-    LOGI("[FFI] [PHASE] Copying result buffer: %dx%d x %d channels = %zu bytes",
-         result->width, result->height, result->channel, pixel_count);
-    uint8_t* buf = (uint8_t*)malloc(pixel_count);
-    if (buf) {
-        memcpy(buf, result->data, pixel_count);
-        *out_size = pixel_count;
-        LOGI("[FFI] Generated %dx%d RGB (%zu bytes)", result->width, result->height, pixel_count);
-    } else {
-        LOGE("[FFI] malloc failed for %zu bytes", pixel_count);
-    }
-
-    free(result->data);
-    free(result);
+    if (result)
+        LOGI("[FFI] Generated %dx%d RGB (%zu bytes)", result_width, result_height, *out_size);
     LOGI("[FFI] [PHASE] Returning buffer to Dart");
-    return buf;
+    return result;
 }
 
 // Get number of physical CPU cores.

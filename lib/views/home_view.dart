@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -150,12 +148,8 @@ class HomeView extends GetView<HomeController> {
           child: Row(children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(11),
-              child: Image.asset(
-                  Platform.isLinux
-                      ? 'assets/icons/openlm-mark.png'
-                      : 'assets/icons/appicon.png',
-                  width: 36,
-                  height: 36),
+              child: Image.asset('assets/icons/openlm-mark.png',
+                  width: 36, height: 36),
             ),
             const SizedBox(width: 12),
             Text('OpenLM',
