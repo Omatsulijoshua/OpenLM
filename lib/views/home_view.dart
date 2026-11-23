@@ -31,14 +31,10 @@ class HomeView extends GetView<HomeController> {
         label: 'Settings'),
   ];
 
-  bool get _isWide {
-    // Force bottom navbar for all layouts per user request
-    return false;
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isWide = MediaQuery.sizeOf(context).width >= 960;
     return Obx(() => Scaffold(
           key: controller.scaffoldKey,
           backgroundColor: isDark ? Colors.black : Colors.white,
@@ -57,7 +53,7 @@ class HomeView extends GetView<HomeController> {
                 SettingsView()
               ],
             );
-            if (_isWide) {
+            if (isWide) {
               return Row(children: [
                 _buildSidebar(context, isDark),
                 VerticalDivider(
@@ -71,8 +67,7 @@ class HomeView extends GetView<HomeController> {
             }
             return content;
           }),
-          bottomNavigationBar:
-              _isWide ? null : _buildBottomNav(context, isDark),
+          bottomNavigationBar: isWide ? null : _buildBottomNav(context, isDark),
         ));
   }
 
@@ -145,16 +140,37 @@ class HomeView extends GetView<HomeController> {
     final muted = Theme.of(context).hintColor;
 
     return Container(
-      width: 76,
+      width: 236,
       color: isDark ? Colors.black : Colors.white,
-      child: Column(children: [
-        // const SizedBox(height: 20),
-        // Image.asset(
-        //   'assets/icons/appicon.png',
-        //   width: 40,
-        //   height: 40,
-        // ),
-        // const SizedBox(height: 20),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 24, 16, 28),
+          child: Row(children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(11),
+              child: Image.asset('assets/icons/appicon.png',
+                  width: 36, height: 36),
+            ),
+            const SizedBox(width: 12),
+            Text('OpenLM',
+                style: GoogleFonts.inter(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.4,
+                  color: isDark ? Colors.white : Colors.black,
+                )),
+          ]),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 12, 10),
+          child: Text('WORKSPACE',
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.1,
+                color: muted,
+              )),
+        ),
         Expanded(child: Obx(() {
           final current = controller.currentTab.value;
           return ListView.builder(
@@ -164,7 +180,7 @@ class HomeView extends GetView<HomeController> {
               final sel = current == i;
               return Padding(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
                 child: Material(
                   color:
                       sel ? accent.withValues(alpha: 0.12) : Colors.transparent,
@@ -173,20 +189,21 @@ class HomeView extends GetView<HomeController> {
                     borderRadius: BorderRadius.circular(12),
                     onTap: () => controller.changeTab(i),
                     child: SizedBox(
-                      height: 52,
-                      child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(sel ? tab.activeIcon : tab.icon,
-                                color: sel ? accent : muted, size: 20),
-                            const SizedBox(height: 3),
-                            Text(tab.label,
-                                style: GoogleFonts.inter(
-                                    fontSize: 10,
-                                    fontWeight:
-                                        sel ? FontWeight.w600 : FontWeight.w400,
-                                    color: sel ? accent : muted)),
-                          ]),
+                      height: 46,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Row(children: [
+                          Icon(sel ? tab.activeIcon : tab.icon,
+                              color: sel ? accent : muted, size: 19),
+                          const SizedBox(width: 12),
+                          Text(tab.label,
+                              style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight:
+                                      sel ? FontWeight.w600 : FontWeight.w500,
+                                  color: sel ? accent : muted)),
+                        ]),
+                      ),
                     ),
                   ),
                 ),
@@ -194,7 +211,11 @@ class HomeView extends GetView<HomeController> {
             },
           );
         })),
-        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 12, 18),
+          child: Text('Your devices. One conversation.',
+              style: GoogleFonts.inter(fontSize: 11, color: muted)),
+        ),
       ]),
     );
   }

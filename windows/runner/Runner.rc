@@ -89,11 +89,11 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.orailnoor" "\0"
+            VALUE "CompanyName", "Omatsuli Joshua Toritseju" "\0"
             VALUE "FileDescription", "OpenLM" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "OpenLM" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.orailnoor. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Omatsuli Joshua Toritseju. All rights reserved." "\0"
             VALUE "OriginalFilename", "openlm.exe" "\0"
             VALUE "ProductName", "OpenLM" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
