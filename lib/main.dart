@@ -28,6 +28,7 @@ import 'services/local_image_service.dart';
 import 'services/app_log_service.dart';
 import 'services/crash_reporting_service.dart';
 import 'services/image_generation_notification_service.dart';
+import 'services/ad_service.dart';
 import 'core/constants.dart';
 
 void main() {
@@ -97,13 +98,14 @@ void main() {
     Get.put(DownloadService());
     if (UpdateService.isSupported) Get.put(UpdateService(), permanent: true);
     Get.put(LocalImageService());
-    final crashReporting = await Get.putAsync(() => CrashReportingService().init().timeout(
-          const Duration(seconds: 10),
-          onTimeout: () {
-            appLog.error('CrashReportingService.init timed out');
-            return CrashReportingService();
-          },
-        ));
+    final crashReporting =
+        await Get.putAsync(() => CrashReportingService().init().timeout(
+              const Duration(seconds: 10),
+              onTimeout: () {
+                appLog.error('CrashReportingService.init timed out');
+                return CrashReportingService();
+              },
+            ));
     FlutterError.onError = (details) {
       FlutterError.presentError(details);
       appLog.error(
@@ -132,6 +134,7 @@ void main() {
     appLog.info('Notifications initialized');
     Get.put(ServerController(), permanent: true);
     Get.put(ModelController());
+    final adService = Get.put(AdService(), permanent: true);
     appLog.info('All services initialized, launching app');
 
     // Auto-configure inference settings based on device RAM
@@ -141,6 +144,12 @@ void main() {
     _validateLastModel();
 
     runApp(const OpenLMApp());
+
+    if (!kIsWeb && Platform.isAndroid) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(adService.init());
+      });
+    }
 
     // Apply system UI after frame is rendered so Get.mediaQuery is available
     WidgetsBinding.instance.addPostFrameCallback((_) {

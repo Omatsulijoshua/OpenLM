@@ -25,6 +25,9 @@
         android:largeHeap="true"
         android:usesCleartextTraffic="true"
         android:extractNativeLibs="true">
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3049300561479903~1883740847" />
         <activity
             android:name="com.orailnoor.privatelm.MainActivity"
             android:exported="true"

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../controllers/home_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../core/constants.dart';
 import '../core/ui.dart';
@@ -14,9 +15,11 @@ import '../services/device_info_service.dart';
 import '../services/device_info_native.dart' as platform_info;
 import '../ffi/sd_ffi_bindings.dart';
 import '../services/cluster_service.dart';
+import '../services/ad_service.dart';
 import 'cluster_view.dart';
 import 'log_view.dart';
 import '../core/haptics.dart';
+import '../widgets/android_banner_ad.dart';
 
 const _tabular = [FontFeature.tabularFigures()];
 
@@ -124,14 +127,41 @@ class SettingsView extends GetView<SettingsController> {
                         ClusterRole.worker => 'Worker',
                         ClusterRole.off => 'Off',
                       },
-                      style: AppTokens.of(context).caption.copyWith(fontSize: 14)),
+                      style:
+                          AppTokens.of(context).caption.copyWith(fontSize: 14)),
                   chevron: true,
                   onTap: () => Get.to(() => const ClusterView()),
                 ),
             ]),
             const SectionHeader('About'),
             AppGroup(dividerIndent: 60, children: [
+              Obx(() {
+                final home = Get.find<HomeController>();
+                final ads = Get.find<AdService>();
+                if (home.currentTab.value != 3 ||
+                    !ads.canShowBanner.value ||
+                    ads.bannerDismissed.value) {
+                  return const SizedBox.shrink();
+                }
+                return const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: AndroidBannerAd(),
+                );
+              }),
               if (showUpdates) _buildUpdatesRow(context),
+              Obx(() {
+                final ads = Get.find<AdService>();
+                if (!ads.privacyOptionsRequired.value) {
+                  return const SizedBox.shrink();
+                }
+                return AppRow(
+                  icon: Icons.privacy_tip_outlined,
+                  title: 'Ad privacy choices',
+                  subtitle: 'Review or update your consent',
+                  chevron: true,
+                  onTap: ads.showPrivacyOptions,
+                );
+              }),
               _navRow(
                 context,
                 icon: Icons.smartphone_rounded,
